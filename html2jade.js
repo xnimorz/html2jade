@@ -509,7 +509,8 @@ htmlParser.prototype.parse = function()
 			continue;
 		}
 
-		newTag = htmlParser.getNextTag();
+		newTag = this.getNextTag();
+		onlyText = this.textNodesList.indexOf(lastTagName) >= 0;
 		if (newTag.pos == this.position && (!onlyText || lastTagName == newTag.name) && newTag.tag)
 		{
 		   node = new Node(newTag.tag[0][1] == "/"?"close":"tag",newTag.name);
@@ -534,6 +535,7 @@ htmlParser.prototype.parse = function()
 		}
 		else
 		{
+
 		   var value = "",
 			   isEnd = false;
 		   while (!isEnd)
@@ -545,6 +547,7 @@ htmlParser.prototype.parse = function()
 			   }
 			   else
 			   {
+				   value += this.target.slice(newTag.pos, newTag.pos + newTag.tag[0].length);
 				   this.target = this.target.slice(newTag.pos + newTag.tag[0].length,this.target.length);
 				   newTag.tag = this.target.match(tagRegExp);
 				   if (newTag.tag)
