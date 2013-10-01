@@ -294,6 +294,10 @@ Node.prototype.setId = function(id)
 	this.id = id;
 }
 
+/**
+ * Установка тега
+ * @param tagName
+ */
 Node.prototype.setTagName = function(tagName)
 {
 	this.tagName = tagName;
@@ -619,78 +623,86 @@ JadeParser.prototype.parse = function()
 		lastTabs = 0,
 		startTabs = 0,
 		tabs = 0;
-	while (this.target.length > this.position)
+	try
 	{
-
-		var node;
-		if (!isText)
-			lastTabs = tabs;
-
-		tabs = this.calculateFreeSpace(startTabs);
-		startTabs = 0;
-		if (this.target.length == this.position)
-			continue;
-
-		if ((this.target[this.position] == '.' || this.target[this.position] == "#" || this.target[this.position].match(tagRegExp)) && (!isText || lastTabs >= tabs ))
+		while (this.target.length > this.position)
 		{
-			isText = false;
-			newTag =
-			{
-				tag : "div",
-				pos : this.position
-			};
 
-			if (this.target[this.position].match(tagRegExp))
-			{
-				newTag.tag = "";
-				while (this.target.length > this.position && this.target[this.position].match(tagRegExp)) newTag.tag += this.target[this.position++];
-			}
-
-			node = new JadeNode('tag',newTag.tag);
-			node.setTabs(tabs);
-
-			if (newTag.tag == "!!!" )
-			{
-				this.processDoctype(node);
-				this.addNode(node);
-				continue;
-			}
-
-			if (newTag.tag == "//")
-			{
-				this.processComment(node);
-				startTabs = tabs;
+			var node;
+			if (!isText)
 				lastTabs = tabs;
-				isText = true;
-				this.addNode(node);
+
+			tabs = this.calculateFreeSpace(startTabs);
+			startTabs = 0;
+			if (this.target.length == this.position)
 				continue;
-			}
 
-			 this.parseTagInfo(node,tagRegExp);
-
-		   if (this.target.length > this.position && (this.target[this.position] == "." && !this.target[this.position+1].match(tagRegExp)) || this.textNodesList.indexOf(newTag.tag) >= 0)
-		   {
-			   lastTabs = tabs;
-			   isText = true;
-		   }
-		   startTabs = tabs;
-		   this.addNode(node);
-
-		}
-		else//TextNode
-		{
-			if (this.target[this.position] == "|" && !isText)
+			//Обработка тегов (div, которые могут начинаться с . или #, а также остальные возможные)
+			if ((this.target[this.position] == '.' || this.target[this.position] == "#" || this.target[this.position].match(tagRegExp)) && (!isText || lastTabs >= tabs ))
 			{
-				this.position++;
+				isText = false;
+				newTag =
+				{
+					tag : "div",
+					pos : this.position
+				};
+				 //Чтение названия тега (если есть)
+				if (this.target[this.position].match(tagRegExp))
+				{
+					newTag.tag = "";
+					while (this.target.length > this.position && this.target[this.position].match(tagRegExp)) newTag.tag += this.target[this.position++];
+				}
+				//Создаем ноду
+				node = new JadeNode('tag',newTag.tag);
+				node.setTabs(tabs);
+				//Doctype
+				if (newTag.tag == "!!!" )
+				{
+					this.processDoctype(node);
+					this.addNode(node);
+					continue;
+				}
+				 //comment
+				if (newTag.tag == "//")
+				{
+					this.processComment(node);
+					startTabs = tabs;
+					lastTabs = tabs;
+					isText = true;
+					this.addNode(node);
+					continue;
+				}
+				  //Чтение классов, id, атрибутов
+				 this.parseTagInfo(node,tagRegExp);
+
+			   if (this.target.length > this.position && (this.target[this.position] == "." && !this.target[this.position+1].match(tagRegExp)) || this.textNodesList.indexOf(newTag.tag) >= 0)
+			   {
+				   lastTabs = tabs;
+				   isText = true;
+			   }
+			   startTabs = tabs;
+			   this.addNode(node);
+
 			}
-			node = new JadeNode("text");
-			node.setTabs(tabs);
-			node.close();
-			var tempStr = "";
-			while (this.target.length > this.position && this.target[this.position] != "\n") tempStr += this.target[this.position++];
-			node.addContent(tempStr);
-			this.addNode(node);
+			else//TextNode
+			{
+				if (this.target[this.position] == "|" && !isText)
+				{
+					this.position++;
+				}
+				node = new JadeNode("text");
+				node.setTabs(tabs);
+				node.close();
+				var tempStr = "";
+				while (this.target.length > this.position && this.target[this.position] != "\n") tempStr += this.target[this.position++];
+				node.addContent(tempStr);
+				this.addNode(node);
+			}
 		}
+	}
+	catch(e)
+	{
+		alert("Что-то пошло не так. Скорее всего представленные данные не являются форматом Jade");
 	}
 	console.log(this);
 }
@@ -862,8 +874,8 @@ HtmlParser.prototype.parse = function()
 		onlyText = false,
 		lastTagName = "",
 		newTag;
-//	try
-//	{
+	try
+	{
 		while (this.target.length > this.position)
 		{
 
@@ -936,12 +948,12 @@ HtmlParser.prototype.parse = function()
 			}
 			this.position = 0;
 		}
-/*	}
+	}
 	catch(e)
 	{
 
 		alert("Скорее всего, это не HTML формат. Проверьте введенные Вами данные");
-	}   */
+	}
    console.log(this);
 }
 
